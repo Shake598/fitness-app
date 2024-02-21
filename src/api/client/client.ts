@@ -45,12 +45,6 @@ export const Client = mongoose.model('Client', new mongoose.Schema({
             }
         }
     },
-    peselNumber: {
-        type: Number,
-        required: true,
-        trim: true,
-        minlength: 11,
-    },
     trainingHours: {
         type: [String],
         default: [],
