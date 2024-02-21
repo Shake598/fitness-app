@@ -65,7 +65,7 @@ clientRouter.post('/client-register', async (req: Request, res: Response) => {
 //     }
 // });
 
-clientRouter.get('/client/:id', async (req: Request, res: Response) => {
+clientRouter.get('/clients/:id', async (req: Request, res: Response) => {
     const clientId = req.params.id;
     try {
       if (!req.user || !(req.user.role === 'client' && req.user.id === clientId) && req.user.role !== 'admin') {
@@ -113,7 +113,7 @@ clientRouter.post('/login', async (req: Request, res: Response) => {
     }
 });
 
-clientRouter.get('/client/:id/training-hours', async (req: Request, res: Response) => {
+clientRouter.get('/clients/:id/training-hours', async (req: Request, res: Response) => {
     const clientId = req.params.id;
 
     try {
@@ -134,7 +134,7 @@ clientRouter.get('/client/:id/training-hours', async (req: Request, res: Respons
     }
 });
 
-clientRouter.patch('/client/:id', async (req: Request, res: Response) => {
+clientRouter.patch('/clients/:id', async (req: Request, res: Response) => {
     const clientId = req.params.id;
     try {
       if (!req.user || !(req.user.role === 'client' && req.user.id === clientId) && req.user.role !== 'admin') {
@@ -157,7 +157,7 @@ clientRouter.patch('/client/:id', async (req: Request, res: Response) => {
     }
 });
 
-clientRouter.delete('/client/:id', async (req: Request, res: Response) => {
+clientRouter.delete('/clients/:id', async (req: Request, res: Response) => {
   const clientId = req.params.id;
   try {
     if (!req.user || !(req.user.role === 'client' && req.user.id === clientId) && req.user.role !== 'admin') {

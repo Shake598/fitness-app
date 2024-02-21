@@ -72,7 +72,7 @@ adminRouter.post('/admin-login', async (req: Request, res: Response) => {
     }
 });
 
-adminRouter.patch('/admin/:id', isAdminLoggedIn, async (req: Request, res: Response) => {
+adminRouter.patch('/admins/:id', isAdminLoggedIn, async (req: Request, res: Response) => {
     const adminId = req.params.id;
     try {
         if (!req.user || req.user.role !== 'admin') {
@@ -90,7 +90,7 @@ adminRouter.patch('/admin/:id', isAdminLoggedIn, async (req: Request, res: Respo
     }
 });
 
-adminRouter.delete('/admin/:id', isAdminLoggedIn, async (req: Request, res: Response) => {
+adminRouter.delete('/admins/:id', isAdminLoggedIn, async (req: Request, res: Response) => {
     const adminId = req.params.id;
     try {
         if (!req.user || req.user.role !== 'admin') {

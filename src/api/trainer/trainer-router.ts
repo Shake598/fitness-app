@@ -46,7 +46,7 @@ trainerRouter.post('/trainer-register', async (req: Request, res: Response) => {
     }
 });
 
-trainerRouter.get('/trainer/:id', async (req: Request, res: Response) => {
+trainerRouter.get('/trainers/:id', async (req: Request, res: Response) => {
     const trainerId = req.params.id;
     try {
       if (!req.user || !(req.user.role === 'trainer' && req.user.id === trainerId) && req.user.role !== 'admin') {
@@ -81,7 +81,7 @@ trainerRouter.post('/trainer-login', async (req: Request, res: Response) => {
     }
 });
 
-trainerRouter.patch('/trainer/:id', async (req: Request, res: Response) => {
+trainerRouter.patch('/trainers/:id', async (req: Request, res: Response) => {
     const trainerId = req.params.id;
 
     try {
@@ -105,7 +105,7 @@ trainerRouter.patch('/trainer/:id', async (req: Request, res: Response) => {
     }
   });
 
-trainerRouter.delete('/trainer/:id', async (req: Request, res: Response) => {
+trainerRouter.delete('/trainers/:id', async (req: Request, res: Response) => {
   const trainerId = req.params.id;
   try {
     if (!req.user || !(req.user.role === 'trainer' && req.user.id === trainerId) && req.user.role !== 'admin') {
