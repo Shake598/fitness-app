@@ -6,11 +6,7 @@ export const Availability = mongoose.model('Availability', new mongoose.Schema({
     ref: 'Trainer',
     required: true,
   },
-  startDate: {
-    type: Date,
-    required: true,
-  },
-  endDate: {
+  date: {
     type: Date,
     required: true,
   },

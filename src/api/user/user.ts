@@ -1,6 +1,12 @@
 import mongoose from 'mongoose';
 
-export const Client = mongoose.model('Client', new mongoose.Schema({
+enum role {
+    CLIENT = 'client',
+    TRAINER = 'trainer',
+    ADMIN = 'admin'
+}
+
+export const User = mongoose.model('User', new mongoose.Schema({
     first_name: {
         type: String,
     },
@@ -9,18 +15,12 @@ export const Client = mongoose.model('Client', new mongoose.Schema({
     },
     email: {
         type: String,
-        required: true,
     },
     password: {
         type: String,
-        required: true,
     },
-    phoneNumber: {
+    role: {
         type: String,
-        required: true,
-    },
-    booking: {
-        type: [String],
-        default: [],
+        enum: Object.values(role),
     }
 }));

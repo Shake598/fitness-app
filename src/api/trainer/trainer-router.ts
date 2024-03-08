@@ -1,125 +1,87 @@
 import express, { Request, Response } from 'express';
+import bcrypt from 'bcrypt';
 import { Trainer } from './trainer';
-import nodemailer from 'nodemailer';
+import { User } from '../user/user';
+import { isTrainerOrAdmin, isLoggedIn } from '../../middleware/check-role';
+import { NotFoundException } from '../../utils/error-handler';
 
-const bcrypt = require('bcryptjs');
 export const trainerRouter = express.Router();
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-      user: 'fitness-app@gmail.com', 
-      pass: 'Fitness-app123!',
-  },
+trainerRouter.get('/trainers',isLoggedIn , async (req: Request, res: Response) => {
+  const limit = Number(req.query.limit);
+  const skip = Number(req.query.skip);
+
+  try {
+    const trainers = await Trainer.find({}, { first_name: 1, last_name: 1, specialization: 1, experience: 1, email: 1 }, { skip, limit });
+      res.send(trainers);
+    } catch (error: any) {
+      res.status(error.status).send(error.message);
+  }
 });
-
-trainerRouter.post('/trainer-register', async (req: Request, res: Response) => {
-    try {
-        const existingTrainer = await Trainer.findOne({ email: req.body.email, phoneNumber: req.body.phoneNumber });
-        if (existingTrainer) {
-            return res.status(400).send({ error: 'Trainer with this email/phone number already exists' });
-        } 
-
-        const hashedPassword = await bcrypt.hash(req.body.password, 10);
-
-        const trainer = new Trainer(req.body);
-        await trainer.save();
-
-        const mailOptions = {
-          from: 'fitness-app@gmail.com',
-          to: req.body.email,
-          subject: 'Registration confirmation',
-          text: 'Thank you for registering as a trainer! Your profile has been successfully registered.',
-      };
-
-      transporter.sendMail(mailOptions, (error, info) => {
-          if (error) {
-              console.error('An error occurred while sending the email', error);
-          } else {
-              console.log('E-mail sent', info.response);
-          }
-      });
-
-        res.status(201).send({ message: 'Trainer registration successful' });
-    } catch (error) {
-        res.status(500).send({ error: 'An error occurred during trainer registration' });
-    }
-});
-
-trainerRouter.get('/trainers/:id', async (req: Request, res: Response) => {
+ 
+trainerRouter.get('/trainers/:id', isTrainerOrAdmin, async (req: Request, res: Response) => {
     const trainerId = req.params.id;
     try {
-      if (!req.user || !(req.user.role === 'trainer' && req.user.id === trainerId) && req.user.role !== 'admin') {
-          return res.status(403).send({ error: 'Unauthorized access' });
-      }
-
       const trainer = await Trainer.findById(trainerId);
       if (!trainer) {
-        return res.status(404).send({ error: 'Trainer with the given id does not exist' });
+        throw new NotFoundException('Trainer not found');
       }
       res.send(trainer);
-    } catch (e) {
-      res.status(500).send();
+    } catch (error: any) {
+      res.status(error.status).send(error.message);
     }
 });
 
-trainerRouter.post('/trainer-login', async (req: Request, res: Response) => {
-    try {
-        const trainer = await Trainer.findOne({ email: req.body.email });
-        if (!trainer) {
-            return res.status(400).send({ error: 'Incorrect email address or password' });
-        }
-
-        const isPasswordMatch = await bcrypt.compare(req.body.password, trainer.password);
-        if (!isPasswordMatch) {
-            return res.status(400).send({ error: 'Incorrect email address or password' });
-        }
-
-        res.status(200).send({ message: 'The user has been successfully logged in' });
-    } catch (error) {
-        res.status(400).send({ error: 'There was a problem logging in' });
-    }
-});
-
-trainerRouter.patch('/trainers/:id', async (req: Request, res: Response) => {
-    const trainerId = req.params.id;
-
-    try {
-      if (!req.user || !(req.user.role === 'trainer' && req.user.id === trainerId) && req.user.role !== 'admin') {
-          return res.status(403).send({ error: 'Unauthorized access' });
-      }
-
-      const updatedTrainer = await Trainer.findByIdAndUpdate(trainerId, req.body, {
-        new: true,
-        runValidators: true,
-      });
-  
-      if (!updatedTrainer) {
-        return res.status(404).send({ error: 'Trainer with the given id does not exist' });
-      }
-  
-      res.send(updatedTrainer);
-    } catch (error) {
-      console.error('Error updating client:', error);
-      res.status(400).send({ error: 'There was a problem updating the trainer profile' });
-    }
-  });
-
-trainerRouter.delete('/trainers/:id', async (req: Request, res: Response) => {
+trainerRouter.patch('/trainers/:id', isTrainerOrAdmin, async (req: Request, res: Response) => {
   const trainerId = req.params.id;
   try {
-    if (!req.user || !(req.user.role === 'trainer' && req.user.id === trainerId) && req.user.role !== 'admin') {
-        return res.status(403).send({ error: 'Unauthorized access' });
+    const originalTrainer = await Trainer.findById(trainerId);
+
+    if (!originalTrainer) {
+      throw new NotFoundException('Trainer not found');
     }
 
-      const deletedTrainer = await Trainer.findByIdAndDelete(trainerId);
-  
-      if (!deletedTrainer) {
-        return res.status(404).send({ error: 'Trainer with the given id does not exist' });
-      }
-  
-      res.send(deletedTrainer);
-    } catch (error) {
-      res.status(500).send({ error: 'An error occurred while deleting the trainer profile' });
+    const updatedTrainer = await Trainer.findByIdAndUpdate(trainerId, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updatedTrainer) {
+      throw new NotFoundException('Trainer not found');
     }
-  });
+
+    const user = await User.findOne({ email: originalTrainer.email });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    user.first_name = req.body.first_name || user.first_name;
+    user.last_name = req.body.last_name || user.last_name;
+    user.email = req.body.email || user.email;
+    user.password = req.body.password ? await bcrypt.hash(req.body.password, 10) : user.password;
+
+    await user.save();
+
+    res.send({ updatedTrainer });
+  } catch (error: any) {
+    res.status(error.status).send(error.message);
+  }
+});
+
+trainerRouter.delete('/trainers/:id', isTrainerOrAdmin, async (req: Request, res: Response) => {
+  const trainerId = req.params.id;
+  try {
+    const deletedTrainer = await Trainer.findByIdAndDelete(trainerId);
+
+    if (!deletedTrainer) {
+      throw new NotFoundException('Trainer not found');
+    }
+
+    const deletedUser = await User.findOneAndDelete({ email: deletedTrainer.email });
+
+    res.send({ message: 'Trainer account deleted successfully', deletedTrainer, deletedUser });
+  } catch (error: any) {
+    res.status(error.status).send(error.message);
+  }
+});
